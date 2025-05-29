@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>费用计划试算</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/locale/zh-cn.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fc 0%, #e6f0ff 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(120deg, #1a73e8, #0d47a1);
+            color: white;
+            padding: 28px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(25deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .header h1 i {
+            margin-right: 15px;
+            background: rgba(255, 255, 255, 0.25);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .header .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            font-weight: 400;
+            max-width: 700px;
+            line-height: 1.5;
+        }
+        
+        .header .info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header .date {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .header .project-id {
+            font-size: 16px;
+            opacity: 0.9;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        
+        .card {
+            padding: 30px 35px;
+            border-bottom: 1px solid #eaeef5;
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 18px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        
+        .card-title i {
+            width: 42px;
+            height: 42px;
+            background: #e3f2fd;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #1a73e8;
+            font-size: 20px;
+        }
+        
+        .card-title h2 {
+            font-size: 24px;
+            color: #1a237e;
+            font-weight: 700;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #444;
+            font-size: 16px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #d1e3f6;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8fbff;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+            background: white;
+        }
+        
+        .form-control::placeholder {
+            color: #a0aec0;
+        }
+        
+        .form-hint {
+            font-size: 14px;
+            color: #718096;
+            margin-top: 8px;
+        }
+        
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0 20px;
+        }
+        
+        .btn {
+            padding: 15px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 6px 12px rgba(50, 50, 93, 0.11), 0 3px 6px rgba(0, 0, 0, 0.08);
+        }
+        
+        .btn i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(120deg, #1a73e8, #0b5ed7);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(120deg, #34a853, #2e8b57);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(120deg, #f9ab00, #e67c00);
+            color: white;
+        }
+        
+        .btn-info {
+            background: linear-gradient(120deg, #6f42c1, #563d7c);
+            color: white;
+        }
+        
+        .btn-light {
+            background: white;
+            color: #1a73e8;
+            border: 2px solid #d1e3f6;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(50, 50, 93, 0.15), 0 6px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .fee-table-container {
+            margin-top: 25px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .fee-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
+        
+        .fee-table th {
+            background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+            color: #0d47a1;
+            font-weight: 700;
+            padding: 18px 20px;
+            text-align: left;
+            border-bottom: 3px solid #90caf9;
+        }
+        
+        .fee-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eceff1;
+        }
+        
+        .fee-table tr:nth-child(even) {
+            background-color: #f8fbff;
+        }
+        
+        .fee-table tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .checkbox-cell {
+            display: flex;
+            align-items: center;
+        }
+        
+        .checkbox-cell input[type="checkbox"] {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            accent-color: #1a73e8;
+        }
+        
+        .locked-cell {
+            text-align: center;
+        }
+        
+        .locked-indicator {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #34a853;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .action-cell {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .delete-btn {
+            color: #ea4335;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .delete-btn:hover {
+            background: #fce8e6;
+            transform: scale(1.1);
+        }
+        
+        .footer {
+            padding: 25px 35px;
+            background: #f5f9ff;
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+        }
+        
+        .footer .btn {
+            min-width: 120px;
+            justify-content: center;
+            padding: 14px 25px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+            background: #f8fbff;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .empty-state i {
+            font-size: 72px;
+            margin-bottom: 25px;
+            color: #cfd8dc;
+        }
+        
+        .empty-state h3 {
+            font-size: 26px;
+            margin-bottom: 15px;
+            color: #4a5568;
+        }
+        
+        .empty-state p {
+            font-size: 18px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .calculation-summary {
+            background: linear-gradient(120deg, #e8f5e9, #d7eedf);
+            border-radius: 15px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .summary-icon {
+            font-size: 36px;
+            color: #34a853;
+            margin-right: 20px;
+        }
+        
+        .summary-content h3 {
+            color: #2e7d32;
+            margin-bottom: 8px;
+            font-size: 22px;
+        }
+        
+        .summary-content p {
+            color: #546e7a;
+            font-size: 17px;
+        }
+        
+        .highlight {
+            color: #1a73e8;
+            font-weight: 700;
+        }
+        
+        .total-fee {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0d47a1;
+            margin-left: 10px;
+        }
+        
+        @media (max-width: 1000px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+                padding: 25px;
+            }
+            
+            .header .info {
+                align-items: center;
+            }
+            
+            .footer {
+                flex-direction: column;
+            }
+            
+            .footer .btn {
+                width: 100%;
+            }
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+        
+        .input-group .form-control {
+            flex: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        
+        .input-group .unit {
+            background: #e3f2fd;
+            padding: 0 15px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            border: 2px solid #d1e3f6;
+            border-left: none;
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+        
+        /* 表格输入框样式 */
+        .table-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1e3f6;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #fff;
+        }
+        
+        .table-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+        }
+        
+        .table-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1e3f6;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #fff;
+        }
+        
+        .table-select:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+        }
+        
+        .locked-indicator {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .locked-indicator.locked {
+            background: #34a853;
+            color: white;
+        }
+        
+        .locked-indicator.unlocked {
+            background: #f1f3f4;
+            color: #5f6368;
+            border: 1px solid #dadce0;
+        }
+        
+        .locked-indicator.unlocked:hover {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+        
+        .locked-cell {
+            text-align: center;
+        }
+        
+        /* 禁用状态的输入框样式 */
+        .table-input:disabled, 
+        .table-select:disabled {
+            background-color: #f8f9fa;
+            color: #5f6368;
+            cursor: not-allowed;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background: linear-gradient(120deg, #1a73e8, #0d47a1);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            padding: 25px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .modal-footer {
+            padding: 15px 25px;
+            background: #f8fbff;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .close-btn:hover {
+            transform: rotate(90deg);
+        }
+        
+        .import-option {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .import-card {
+            background: #f8fbff;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            border: 2px solid #d1e3f6;
+            transition: all 0.3s ease;
+        }
+        
+        .import-card:hover {
+            border-color: #1a73e8;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .import-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: #1a237e;
+        }
+        
+        .import-card p {
+            color: #5f6368;
+            font-size: 14px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: block;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px dashed #90caf9;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .file-label:hover {
+            background: #d1e3f6;
+        }
+        
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #5f6368;
+            text-align: center;
+        }
+        
+        .import-status {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .import-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .import-error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .template-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .template-preview table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .template-preview th, .template-preview td {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        .template-preview th {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <!-- 头部 -->
+            <div class="header">
+                <div class="header-content">
+                    <h1><i class="fas fa-calculator"></i> 费用计划试算</h1>
+                    <div class="subtitle">输入项目信息参数后，点击费用试算实时计算费用计划,锁定期次后可重新试算</div>
+                </div>
+                <div class="info">
+                    <div class="date">{{ currentDate }}</div>
+                    <div class="project-id">编号: {{ projectId }}</div>
+                </div>
+            </div>
+            
+            <!-- 参数输入 -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2>项目信息</h2>
+                </div>
+                
+                <div class="form-grid">
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-money-bill-wave"></i> 承保金额</label>
+                        <div class="input-group">
+                            <input type="number" v-model="formData.insuredAmount" class="form-control" placeholder="请输入承保金额">
+                            <div class="unit">万元</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-percentage"></i> 收费费率</label>
+                        <div class="input-group">
+                            <input type="number" v-model="formData.feeRate" class="form-control" placeholder="请输入费率百分比">
+                            <div class="unit">%</div>
+                        </div>
+                        <div class="form-hint">年化费率百分比</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-balance-scale"></i> 在保余额</label>
+                        <div class="input-group">
+                            <input type="number" v-model="formData.guaranteeBalance" class="form-control" placeholder="请输入在保余额">
+                            <div class="unit">万元</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-alt"></i> 期限</label>
+                        <div class="input-group">
+                            <input type="number" v-model="formData.duration" class="form-control" placeholder="请输入期限">
+                            <div class="unit">月</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-day"></i> 发行日期</label>
+                        <input type="date" v-model="formData.issueDate" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-check"></i> 到期日</label>
+                        <input type="date" v-model="formData.maturityDate" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-building"></i> 收费主体</label>
+                        <input type="text" v-model="formData.feeEntity" class="form-control" placeholder="请输入收费主体">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-sync-alt"></i> 收费频率</label>
+                        <select v-model="formData.feeFrequency" class="form-control">
+                            <option value="monthly">按月收费</option>
+                            <option value="quarterly">按季度收费</option>
+                            <option value="biannual">半年收费</option>
+                            <option value="annual">按年收费</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-week"></i> 首期收费日</label>
+                        <div class="input-group">
+                            <input type="number" v-model="formData.firstFeeDay" class="form-control" placeholder="输入日期" min="1" max="31">
+                            <div class="unit">日</div>
+                        </div>
+                    </div>
+                      <div class="form-group">
+                        <label><i class="fas fa-user-tie"></i> 业务品种</label>
+                        <input type="text" v-model="formData.businessVariety" class="form-control" placeholder="请输入业务品种">
+                    </div>
+                     <div class="form-group">
+                        <label><i class="fas fa-user-tie"></i> 项目编号</label>
+                        <input type="text" v-model="formData.projectId" class="form-control" placeholder="请输入编号">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user-tie"></i> 客户名称</label>
+                        <input type="text" v-model="formData.customerName" class="form-control" placeholder="请输入客户名称">
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-light" @click="exportProject">
+                        <i class="fas fa-download"></i> 导出
+                    </button>
+                    <button class="btn btn-light" @click="showImportModal">
+                        <i class="fas fa-upload"></i> 导入
+                    </button>
+                    <button class="btn btn-light" @click="downloadTemplate">
+                        <i class="fas fa-file-download"></i> 模板下载
+                    </button>
+                    <button class="btn btn-info" @click="resetForm">
+                        <i class="fas fa-redo"></i> 重置表单
+                    </button>
+                    <button class="btn btn-primary" @click="calculateFees">
+                        <i class="fas fa-calculator"></i> 费用试算
+                    </button>
+                    <!-- 新增重新试算按钮 -->
+                    <button class="btn btn-warning" @click="recalculateFees" :disabled="!hasLockedPlans">
+                        <i class="fas fa-sync-alt"></i> 重新试算
+                    </button>
+                    <button class="btn btn-success" @click="addPlan">
+                        <i class="fas fa-plus-circle"></i> 添加
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 费用计划 -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <h2>费用计划</h2>
+                </div>
+                
+                <!-- 费用试算结果 -->
+                <div v-if="calculationResult" class="calculation-summary">
+                    <div class="summary-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="summary-content">
+                        <h3>费用试算完成！</h3>
+                        <p>已生成 {{ feePlans.length }} 期费用计划，总计费用 <span class="total-fee">{{ totalFees.toLocaleString() }} 元</span></p>
+                        <p v-if="hasLockedPlans" style="margin-top: 8px;">
+                            <i class="fas fa-lock"></i> 已锁定 {{ lockedPlanCount }} 期计划
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 费用计划表格 -->
+                <div v-if="feePlans.length > 0" class="fee-table-container">
+                    <table class="fee-table">
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>日期</th>
+                                <th>收费类型</th>
+                                <th>收费金额（元）</th>
+                                <th>在保金额（万元）</th>
+                                <th>锁定状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(plan, index) in feePlans" :key="index">
+                                <td>{{ index + 1 }}</td>
+                                <td>
+                                    <input type="date" v-model="plan.date" 
+                                           class="table-input" 
+                                           :disabled="plan.locked">
+                                </td>
+                                <td>
+                                    <select v-model="plan.type" 
+                                            class="table-select"
+                                            :disabled="plan.locked">
+                                        <option v-for="option in feeTypeOptions" 
+                                                :value="option.value">{{ option.text }}</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" v-model.number="plan.amount" 
+                                           class="table-input" min="0"
+                                           :disabled="plan.locked">
+                                </td>
+                                <td>
+                                    <input type="number" v-model.number="plan.guaranteeAmount" 
+                                           class="table-input" min="0" step="0.01"
+                                           :disabled="plan.locked">
+                                </td>
+                                <td class="locked-cell">
+                                    <!-- 修改为可点击的锁定按钮 -->
+                                    <div class="locked-indicator" 
+                                         :class="plan.locked ? 'locked' : 'unlocked'"
+                                         @click="toggleLock(index)">
+                                        <i :class="plan.locked ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
+                                    </div>
+                                </td>
+                                <td class="action-cell">
+                                    <div class="delete-btn" @click="deletePlan(index)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 空状态 -->
+                <div v-else class="empty-state">
+                    <i class="fas fa-calculator"></i>
+                    <h3>尚未生成费用计划</h3>
+                    <p>请在上方表单中输入参数并点击"费用试算"按钮，系统将自动生成费用计划表</p>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-light" @click="exportFeePlansCSV">
+                        <i class="fas fa-download"></i> 导出为Excel
+                    </button>
+                    <button class="btn btn-success" @click="savePlan">
+                        <i class="fas fa-save"></i> 保存计划
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 底部操作 -->
+            <div class="footer">
+                <button class="btn btn-light">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button class="btn btn-primary">
+                    <i class="fas fa-save"></i> 保存
+                </button>
+                <button class="btn btn-success">
+                    <i class="fas fa-paper-plane"></i> 提交审批
+                </button>
+            </div>
+        </div>
+        
+        <!-- 导入模态框 -->
+        <div class="modal" v-if="showModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-file-import"></i> 导入数据</h3>
+                    <button class="close-btn" @click="showModal = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="import-option">
+                        <div class="import-card" @click="importType = 'project'">
+                            <h4>
+                                <i class="fas fa-project-diagram" :class="{'text-primary': importType === 'project'}"></i>
+                                导入整个项目
+                            </h4>
+                            <p>导入JSON格式的项目数据，包含参数设置和费用计划</p>
+                        </div>
+                        
+                        <div class="import-card" @click="importType = 'plans'">
+                            <h4>
+                                <i class="fas fa-table" :class="{'text-primary': importType === 'plans'}"></i>
+                                导入费用计划
+                            </h4>
+                            <p>导入CSV格式的费用计划数据，仅更新费用计划表</p>
+                        </div>
+                        
+                        <div class="file-upload-area">
+                            <label class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i> 
+                                <span v-if="importType === 'project'">选择JSON文件</span>
+                                <span v-else>选择CSV文件</span>
+                                <input type="file" class="file-input" 
+                                       @change="handleFileUpload" 
+                                       :accept="importType === 'project' ? '.json' : '.csv'">
+                            </label>
+                            <div class="file-name" v-if="selectedFile">
+                                <i class="fas fa-file"></i> {{ selectedFile.name }}
+                            </div>
+                        </div>
+                        
+                        <div v-if="importStatus" :class="importStatusClass">
+                            <i :class="importStatusIcon"></i> {{ importStatus }}
+                        </div>
+                    </div>
+                    
+                    <div v-if="importType === 'plans'" class="template-preview">
+                        <h4>CSV模板格式预览:</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>日期</th>
+                                    <th>收费类型</th>
+                                    <th>收费金额（元）</th>
+                                    <th>在保金额（万元）</th>
+                                    <th>锁定状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>2024-08-30</td>
+                                    <td>担保费</td>
+                                    <td>80000</td>
+                                    <td>800</td>
+                                    <td>0</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>2024-09-30</td>
+                                    <td>担保费</td>
+                                    <td>80000</td>
+                                    <td>800</td>
+                                    <td>1</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-light" @click="showModal = false">
+                        取消
+                    </button>
+                    <button class="btn btn-primary" @click="executeImport" :disabled="!selectedFile">
+                        导入数据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                currentDate: new Date().toISOString().split('T')[0],
+                projectId: 'P' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0'),
+                formData: {
+                    insuredAmount: 1000,
+                    feeRate: 12,
+                    guaranteeBalance: 800,
+                    duration: 7,
+                    issueDate: '2024-07-25',
+                    maturityDate: '2025-02-25',
+                    feeEntity: '深圳市增信担保有限公司',
+                    feeFrequency: 'monthly',
+                    firstFeeDay: 30,
+                      //业务品种
+                    businessVariety: '单笔发债担保/信用债务',
+                    //项目编号
+                    projectId: '100029438000',
+                    // 客户名称
+                    customerName: '万达科技股份有限公司'
+                },
+                feePlans: [],
+                calculationResult: false,
+                feeTypeOptions: [
+                    { text: '担保费', value: '担保费' },
+                    { text: '服务费', value: '服务费' },
+                    { text: '代收分保费', value: '代收分保费' },
+                    { text: '代收手续费', value: '代收手续费' },
+                    { text: '退费', value: '退费' },
+                    { text: '其他', value: '其他' }
+                ],
+                showModal: false,
+                importType: 'project', // 'project' or 'plans'
+                selectedFile: null,
+                importStatus: '',
+                importStatusClass: '',
+                importStatusIcon: ''
+            },
+            computed: {
+                totalFees() {
+                    return this.feePlans.reduce((sum, plan) => sum + plan.amount, 0);
+                },
+                // 计算锁定的计划数量
+                lockedPlanCount() {
+                    return this.feePlans.filter(plan => plan.locked).length;
+                },
+                // 检查是否有锁定的计划
+                hasLockedPlans() {
+                    return this.lockedPlanCount > 0;
+                }
+            },
+            methods: {
+                calculateFees() {
+                    // 重置结果
+                    this.feePlans = [];
+                    
+                    // 获取表单数据
+                    const insuredAmount = parseFloat(this.formData.insuredAmount) || 0;
+                    const feeRate = parseFloat(this.formData.feeRate) || 0;
+                    const guaranteeBalance = parseFloat(this.formData.guaranteeBalance) || 0;
+                    const duration = parseInt(this.formData.duration) || 0;
+                    const feeFrequency = this.formData.feeFrequency;
+                    
+                    // 验证数据
+                    if (!insuredAmount || !feeRate || !guaranteeBalance || !duration) {
+                        alert('请填写所有必填参数');
+                        return;
+                    }
+                    
+                    // 计算月收费金额（元）
+                    const monthlyFee = guaranteeBalance * 10000 * (feeRate / 100) / 12;
+                    
+                    // 根据收费频率设置收费周期
+                    let periodMonths;
+                    switch(feeFrequency) {
+                        case 'monthly':
+                            periodMonths = 1;
+                            break;
+                        case 'quarterly':
+                            periodMonths = 3;
+                            break;
+                        case 'biannual':
+                            periodMonths = 6;
+                            break;
+                        case 'annual':
+                            periodMonths = 12;
+                            break;
+                        default:
+                            periodMonths = 1;
+                    }
+                    
+                    // 计算收费次数（向上取整）
+                    const periods = Math.ceil(duration / periodMonths);
+                    
+                    // 生成费用计划
+                    let currentDate = moment(this.formData.issueDate);
+                    let cumulativeMonths = 0;
+                    
+                    for (let i = 0; i < periods; i++) {
+                        // 计算本次收费的实际月份数（最后一期可能不足一个周期）
+                        const actualMonths = Math.min(periodMonths, duration - cumulativeMonths);
+                        
+                        // 计算本次收费金额
+                        const feeAmount = monthlyFee * actualMonths;
+                        
+                        // 设置收费日为指定日期
+                        let feeDate = currentDate.clone().date(this.formData.firstFeeDay);
+                        
+                        // 如果该月没有这个日期，则取最后一天
+                        if (!feeDate.isValid() || feeDate.month() !== currentDate.month()) {
+                            feeDate = currentDate.clone().endOf('month');
+                        }
+                        
+                        // 添加到费用计划
+                        this.feePlans.push({
+                            date: feeDate.format('YYYY-MM-DD'),
+                            type: this.getFeeType(feeFrequency),
+                            amount: Math.round(feeAmount),
+                            guaranteeAmount: guaranteeBalance,
+                            // 新增locked属性，初始为未锁定
+                            locked: false,
+                            // 记录原始金额用于重新计算
+                            originalAmount: Math.round(feeAmount)
+                        });
+                        
+                        // 增加累计月份
+                        cumulativeMonths += periodMonths;
+                        
+                        // 增加时间间隔
+                        currentDate.add(periodMonths, 'months');
+                    }
+                    
+                    this.calculationResult = true;
+                },
+                
+                // 重新试算方法
+                recalculateFees() {
+                    if (!this.hasLockedPlans) {
+                        alert('没有锁定的计划，请使用"费用试算"按钮');
+                        return;
+                    }
+                    
+                    // 获取表单数据
+                    const feeRate = parseFloat(this.formData.feeRate) || 0;
+                    const guaranteeBalance = parseFloat(this.formData.guaranteeBalance) || 0;
+                    
+                    // 验证数据
+                    if (!feeRate || !guaranteeBalance) {
+                        alert('请填写费率和在保余额');
+                        return;
+                    }
+                    
+                    // 计算月收费金额（元）
+                    const monthlyFee = guaranteeBalance * 10000 * (feeRate / 100) / 12;
+                    
+                    // 重新计算未锁定的计划
+                    this.feePlans.forEach((plan, index) => {
+                        if (!plan.locked) {
+                            // 计算该期覆盖的月份数
+                            const periodMonths = this.getMonthsByFrequency(this.formData.feeFrequency);
+                            const actualMonths = index === this.feePlans.length - 1 ? 
+                                this.formData.duration % periodMonths || periodMonths : 
+                                periodMonths;
+                            
+                            // 更新金额
+                            plan.amount = Math.round(monthlyFee * actualMonths);
+                            plan.guaranteeAmount = guaranteeBalance;
+                        }
+                    });
+                    
+                    alert(`重新试算完成！已更新 ${this.feePlans.length - this.lockedPlanCount} 期未锁定的计划`);
+                },
+                
+                // 根据收费频率获取月份数
+                getMonthsByFrequency(frequency) {
+                    switch(frequency) {
+                        case 'monthly': return 1;
+                        case 'quarterly': return 3;
+                        case 'biannual': return 6;
+                        case 'annual': return 12;
+                        default: return 1;
+                    }
+                },
+                
+                // 锁定/解锁计划
+                toggleLock(index) {
+                    // 锁定当前行
+                    this.feePlans[index].locked = !this.feePlans[index].locked;
+                    
+                    // 锁定当前日期之前的所有计划
+                    const currentDate = moment();
+                    const planDate = moment(this.feePlans[index].date);
+                    
+                    // 如果当前行是锁定操作，则锁定之前的所有行
+                    if (this.feePlans[index].locked) {
+                        for (let i = 0; i < index; i++) {
+                            if (moment(this.feePlans[i].date).isBefore(currentDate)) {
+                                this.feePlans[i].locked = true;
+                            }
+                        }
+                    }
+                },
+                
+                // 根据收费频率获取收费类型名称
+                getFeeType(frequency) {
+                    switch(frequency) {
+                        case 'monthly': return '担保费';
+                        case 'quarterly': return '担保费';
+                        case 'biannual': return '担保费';
+                        case 'annual': return '担保费';
+                        default: return '担保费';
+                    }
+                },
+                
+                resetForm() {
+                    this.formData = {
+                       // 承保金额
+                        insuredAmount: 1000,
+                        //费率
+                        feeRate: 12,
+                        //在保余额
+                        guaranteeBalance: 800,
+                        // 期限
+                        duration: 7,
+                        // 发行日期
+                        issueDate: '2024-07-25',
+                        // 到期日期
+                        maturityDate: '2025-02-25',
+                        // 收费主体
+                        feeEntity: '深圳市增信担保有限公司',
+                        // 收费频率
+                        feeFrequency: 'monthly',
+                        // 首期收费日
+                        firstFeeDay: 30,
+                        //业务品种
+                        businessVariety: '单笔发债担保/信用债务',
+                        //项目编号
+                        projectId: '100029438000',
+                        // 客户名称
+                        customerName: '万达科技股份有限公司'
+                    };
+                    this.feePlans = [];
+                    this.calculationResult = false;
+                },
+                
+                deletePlan(index) {
+                    if (confirm('确定要删除这条费用计划吗？')) {
+                        this.feePlans.splice(index, 1);
+                        if (this.feePlans.length === 0) {
+                            this.calculationResult = false;
+                        }
+                    }
+                },
+                
+                addPlan() {
+                    this.feePlans.push({
+                        date: moment().format('YYYY-MM-DD'),
+                        type: '担保费',
+                        amount: 0,
+                        guaranteeAmount: 0,
+                        locked: false,
+                        originalAmount: 0
+                    });
+                    this.calculationResult = true;
+                },
+                
+                savePlan() {
+                    if (this.feePlans.length === 0) {
+                        alert('没有可保存的费用计划');
+                        return;
+                    }
+                    
+                    alert(`已成功保存${this.feePlans.length}条费用计划！总计费用：${this.totalFees.toLocaleString()}元`);
+                },
+                
+                // 显示导入模态框
+                showImportModal() {
+                    this.showModal = true;
+                    this.selectedFile = null;
+                    this.importStatus = '';
+                },
+                
+                // 处理文件上传
+                handleFileUpload(event) {
+                    this.selectedFile = event.target.files[0];
+                },
+                
+                // 执行导入操作
+                executeImport() {
+                    if (!this.selectedFile) {
+                        this.setImportStatus('请选择文件', 'import-error', 'fas fa-exclamation-circle');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
+                        try {
+                            if (this.importType === 'project') {
+                                // 导入整个项目
+                                const projectData = JSON.parse(e.target.result);
+                                this.formData = projectData.formData;
+                                this.feePlans = projectData.feePlans;
+                                this.calculationResult = this.feePlans.length > 0;
+                                this.setImportStatus('项目导入成功！', 'import-success', 'fas fa-check-circle');
+                                
+                                // 3秒后关闭模态框
+                                setTimeout(() => {
+                                    this.showModal = false;
+                                }, 2000);
+                            } else {
+                                // 导入费用计划
+                                const csvData = e.target.result;
+                                const rows = csvData.split('\n').slice(1); // 跳过表头
+                                
+                                // 清空当前费用计划
+                                this.feePlans = [];
+                                
+                                rows.forEach(row => {
+                                    if (row.trim() === '') return;
+                                    
+                                    const columns = row.split(',');
+                                    if (columns.length >= 6) {
+                                        this.feePlans.push({
+                                            date: columns[1].trim(),
+                                            type: columns[2].trim(),
+                                            amount: parseFloat(columns[3].trim()) || 0,
+                                            guaranteeAmount: parseFloat(columns[4].trim()) || 0,
+                                            locked: columns[5].trim() === '1'
+                                        });
+                                    }
+                                });
+                                
+                                this.calculationResult = this.feePlans.length > 0;
+                                this.setImportStatus(`成功导入 ${this.feePlans.length} 条费用计划`, 'import-success', 'fas fa-check-circle');
+                                
+                                // 3秒后关闭模态框
+                                setTimeout(() => {
+                                    this.showModal = false;
+                                }, 2000);
+                            }
+                        } catch (error) {
+                            this.setImportStatus('文件格式错误: ' + error.message, 'import-error', 'fas fa-exclamation-circle');
+                        }
+                    };
+                    
+                    if (this.importType === 'project') {
+                        reader.readAsText(this.selectedFile);
+                    } else {
+                        reader.readAsText(this.selectedFile, 'UTF-8');
+                    }
+                },
+                
+                // 设置导入状态
+                setImportStatus(message, statusClass, iconClass) {
+                    this.importStatus = message;
+                    this.importStatusClass = 'import-status ' + statusClass;
+                    this.importStatusIcon = iconClass;
+                },
+                
+                // 导出整个项目（JSON格式）
+                exportProject() {
+                    const projectData = {
+                        formData: this.formData,
+                        feePlans: this.feePlans
+                    };
+                    
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+                    const downloadAnchorNode = document.createElement('a');
+                    downloadAnchorNode.setAttribute("href", dataStr);
+                    downloadAnchorNode.setAttribute("download", "费用计划项目_" + this.projectId + ".json");
+                    document.body.appendChild(downloadAnchorNode);
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                },
+                
+                // 导出费用计划为CSV
+                exportFeePlansCSV() {
+                    if (this.feePlans.length === 0) {
+                        alert('没有费用计划数据可导出');
+                        return;
+                    }
+                    
+                    // CSV表头
+                    let csvContent = "序号,日期,收费类型,收费金额（元）,在保金额（万元）,锁定状态（0未锁定，1锁定）\n";
+                    
+                    // 添加数据行
+                    this.feePlans.forEach((plan, index) => {
+                        const row = [
+                            index + 1,
+                            plan.date,
+                            plan.type,
+                            plan.amount,
+                            plan.guaranteeAmount,
+                            plan.locked ? '1' : '0'
+                        ];
+                        csvContent += row.join(',') + '\n';
+                    });
+                    
+                    // 创建下载链接
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement("a");
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", "费用计划_" + this.projectId + ".csv");
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+                
+                // 下载费用计划模板
+                downloadTemplate() {
+                    // CSV模板内容
+                    const csvContent = "序号,日期,收费类型,收费金额（元）,在保金额（万元）,锁定状态（0未锁定，1锁定）\n" +
+                                      "1,2024-08-30,担保费,80000,800,0\n" +
+                                      "2,2024-09-30,担保费,80000,800,1\n";
+                    
+                    // 创建下载链接
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement("a");
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", "费用计划模板.csv");
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            },
+            mounted() {
+                // 初始计算
+                this.calculateFees();
+            }
+        });
+    </script>
+</body>
+</html>
